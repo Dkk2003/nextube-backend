@@ -19,9 +19,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const videoPath = req.files?.videoFile[0]?.path;
   const thumbnailPath = req.files?.thumbnailFile[0]?.path;
 
-  console.log("videoPath", videoPath);
-  console.log("thumbnailPath", thumbnailPath);
-
   if (!videoPath) {
     throw new ApiError(400, "Video file are required");
   }
