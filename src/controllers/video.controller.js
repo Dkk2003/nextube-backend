@@ -7,6 +7,32 @@ import uploadToCloudinary from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, userId } = req.query;
+
+  if (!userId) {
+    throw new ApiError(404, "User id is required");
+  }
+
+  const aggregate = Video.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+  ]);
+
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10),
+  };
+
+  try {
+    const videos = await Video.aggregatePaginate(aggregate, options);
+    res
+      .status(200)
+      .json(new ApiResponse(200, videos, "Videos fetched successfully"));
+  } catch (error) {
+    throw new ApiError(400, error?.message);
+  }
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -52,4 +78,50 @@ const publishAVideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video uploaded successfully"));
 });
 
-export { getAllVideos, publishAVideo };
+const getVideoById = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    throw new ApiError(400, "Invalid video id");
+  }
+
+  const video = await Video.findById(videoId);
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video are fetched successfully"));
+});
+
+const updateVideo = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const { title, description } = req.body;
+  const thumbnailPath = req.file?.path;
+
+  if (!title || !description || !thumbnailPath) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  const thumbnail = await uploadToCloudinary(thumbnailPath);
+
+  if (!thumbnail) {
+    throw new ApiError(400, "Please upload valid file");
+  }
+
+  const video = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $set: { title, description, thumbnail: thumbnail.url },
+    },
+    { new: true }
+  );
+
+  if (!video) {
+    throw new ApiError(400, "Video not available");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video updated successfully"));
+});
+
+export { getAllVideos, publishAVideo, getVideoById, updateVideo };
