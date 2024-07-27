@@ -69,7 +69,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     description,
     duration: videoUrl?.duration || null,
     views: 0,
-    isPublished: true,
+    isPublished: false,
     owner: req.user?._id,
   });
 
@@ -124,4 +124,67 @@ const updateVideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video updated successfully"));
 });
 
-export { getAllVideos, publishAVideo, getVideoById, updateVideo };
+const deleteVideo = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    throw new ApiError(400, "Please provide proper id");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  await Video.findByIdAndDelete(video._id);
+
+  res.status(200).json(new ApiResponse(200, {}, "Video deleted successfully"));
+});
+
+const togglePublishStatus = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  if (!videoId) {
+    throw new ApiError(400, "Please provide proper id");
+  }
+
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  const togglePublishVideo = await Video.findByIdAndUpdate(
+    video._id,
+    {
+      $set: {
+        isPublished: video?.isPublished ? false : true,
+      },
+    },
+    { new: true }
+  ).select("isPublished");
+
+  if (!togglePublishVideo) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        togglePublishVideo,
+        `Video ${
+          togglePublishVideo.isPublished ? "published" : "unpublished"
+        } successfully`
+      )
+    );
+});
+
+export {
+  getAllVideos,
+  publishAVideo,
+  getVideoById,
+  updateVideo,
+  deleteVideo,
+  togglePublishStatus,
+};
