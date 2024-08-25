@@ -88,11 +88,6 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Incorrect playlist id");
   }
 
-  playlist.videos.map((item) => {
-    console.log("item", item.toString());
-    console.log("videoId", video?._id.toString());
-  });
-
   if (
     playlist.videos.some((field) => field.toString() === video?._id.toString())
   ) {
