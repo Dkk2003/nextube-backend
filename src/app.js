@@ -20,6 +20,8 @@ import tweetRoute from "./routes/tweet.routes.js";
 import subscriptionRoute from "./routes/subscription.routes.js";
 import playlistRoute from "./routes/playlist.routes.js";
 import likeRoute from "./routes/like.routes.js";
+import healthCheckRoute from "./routes/healthcheck.routes.js";
+import commentRoute from "./routes/comment.routes.js";
 
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/videos", videoRoute);
@@ -27,5 +29,7 @@ app.use("/api/v1/tweet", tweetRoute);
 app.use("/api/v1/subscription", subscriptionRoute);
 app.use("/api/v1/playlist", playlistRoute);
 app.use("/api/v1/like", likeRoute);
+app.use("/api/v1/healthCheck", healthCheckRoute);
+app.use("/api/v1/comment", commentRoute);
 
 export default app;
