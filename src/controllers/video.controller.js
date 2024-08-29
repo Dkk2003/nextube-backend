@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import uploadToCloudinary from "../utils/cloudinary.js";
+import { VideoView } from "../models/videoview.model.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, userId } = req.query;
@@ -86,8 +87,26 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
 
   const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
 
-  res
+  const hasViewed = await VideoView.findOne({
+    user: req.user?._id,
+    video: video?._id,
+  });
+
+  if (!hasViewed) {
+    video.views += 1;
+    await video.save();
+
+    await VideoView.create({
+      user: req.user?._id,
+      video: video?._id,
+    });
+  }
+
+  return res
     .status(200)
     .json(new ApiResponse(200, video, "Video are fetched successfully"));
 });
