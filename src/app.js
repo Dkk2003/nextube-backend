@@ -1,7 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { JSON_LIMIT, URL_ENCODED_LIMIT } from "./constants.js";
-import cookieParser from "cookie-parser";
+// import cookieParser from "cookie-parser";
+import cookieSession from "cookie-session";
 
 const app = express();
 
@@ -10,7 +11,17 @@ app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
 app.use(express.json({ limit: JSON_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: URL_ENCODED_LIMIT }));
 app.use(express.static("public"));
-app.use(cookieParser());
+// app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["mySuperSecretKey"],
+    maxAge: 24 * 60 * 60 * 1000,
+    secure: true,
+    httpOnly: true,
+    sameSite: "Strict",
+  })
+);
 
 // routes import
 
