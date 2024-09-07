@@ -128,8 +128,6 @@ const loginUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "none",
-    domain: "nextube.onrender.com",
   };
 
   return res
