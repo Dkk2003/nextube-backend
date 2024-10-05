@@ -7,27 +7,30 @@ import {
   publishAVideo,
   togglePublishStatus,
   updateVideo,
+  getPublicVideos,
 } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 
 const router = Router();
 
-router.use(verifyJwt);
-
-router.route("/getAllVideos").get(getAllVideos);
+router.route("/getPublicVideos").get(getPublicVideos);
+router.route("/getAllVideos").get(verifyJwt, getAllVideos);
 router.route("/publishVideo").post(
+  verifyJwt,
   upload.fields([
     { name: "videoFile", maxCount: 1 },
     { name: "thumbnailFile", maxCount: 1 },
   ]),
   publishAVideo
 );
-router.route("/getVideo/:videoId").get(getVideoById);
+router.route("/getVideo/:videoId").get(verifyJwt, getVideoById);
 router
   .route("/updateVideo/:videoId")
-  .patch(upload.single("thumbnail"), updateVideo);
+  .patch(verifyJwt, upload.single("thumbnail"), updateVideo);
 
-router.route("/deleteVideo/:videoId").delete(deleteVideo);
-router.route("/togglePublishStatus/:videoId").patch(togglePublishStatus);
+router.route("/deleteVideo/:videoId").delete(verifyJwt, deleteVideo);
+router
+  .route("/togglePublishStatus/:videoId")
+  .patch(verifyJwt, togglePublishStatus);
 
 export default router;

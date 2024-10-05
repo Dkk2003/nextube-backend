@@ -199,6 +199,32 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     );
 });
 
+const getPublicVideos = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const aggregate = Video.aggregate([
+    {
+      $match: {
+        isPublished: true,
+      },
+    },
+  ]);
+
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10),
+  };
+
+  try {
+    const videos = await Video.aggregatePaginate(aggregate, options);
+    res
+      .status(200)
+      .json(new ApiResponse(200, videos, "Videos fetched successfully"));
+  } catch (error) {
+    throw new ApiError(400, error?.message);
+  }
+});
+
 export {
   getAllVideos,
   publishAVideo,
@@ -206,4 +232,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  getPublicVideos,
 };
