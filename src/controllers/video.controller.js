@@ -28,7 +28,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
       },
     },
     {
-      $unwind: "$owner", // Unwind the owner array to get a single object
+      $unwind: "$owner",
     },
   ]);
 
