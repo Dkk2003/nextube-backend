@@ -19,6 +19,17 @@ const getAllVideos = asyncHandler(async (req, res) => {
         owner: new mongoose.Types.ObjectId(userId),
       },
     },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $unwind: "$owner", // Unwind the owner array to get a single object
+    },
   ]);
 
   const options = {
@@ -207,6 +218,17 @@ const getPublicVideos = asyncHandler(async (req, res) => {
       $match: {
         isPublished: true,
       },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $unwind: "$owner",
     },
   ]);
 
