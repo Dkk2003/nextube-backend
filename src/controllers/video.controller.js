@@ -211,7 +211,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 });
 
 const getPublicVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 100 } = req.query;
 
   const aggregate = Video.aggregate([
     {
