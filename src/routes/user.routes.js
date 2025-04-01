@@ -11,18 +11,21 @@ import {
   userCoverImageUpdate,
   genrateUserChannelProfile,
   getWatchHistory,
+  verifyOtp,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 // register
-router.route("/register").post(
+router.route("/register").post(upload.none(), registerUser);
+
+router.route("/verifyOtp").post(
   upload.fields([
     { name: "avatar", maxCount: 1 },
     { name: "coverImage", maxCount: 1 },
   ]),
-  registerUser
+  verifyOtp
 );
 
 router.route("/login").post(loginUser);
