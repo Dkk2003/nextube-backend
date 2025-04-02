@@ -12,6 +12,9 @@ import {
   genrateUserChannelProfile,
   getWatchHistory,
   verifyOtp,
+  forgotPassword,
+  resetpassword,
+  resendOtp,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
@@ -29,6 +32,9 @@ router.route("/verifyOtp").post(
 );
 
 router.route("/login").post(loginUser);
+router.route("/forgot-password").post(forgotPassword);
+router.route("/reset-password").post(resetpassword);
+router.route("/resend-otp").post(resendOtp);
 
 //secured routes
 router.route("/logout").post(verifyJwt, logoutUser);
