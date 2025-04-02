@@ -67,4 +67,22 @@ const sendAccountCreationEmail = async (email, fullName) => {
   }
 };
 
-export { sendOtpEmail, sendAccountCreationEmail };
+const sendForgotPasswordLink = async (email, resetLink) => {
+  const mailOptions = {
+    from: `"Nextube" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Password Reset Request",
+    template: "resetpassword",
+    context: {
+      resetLink,
+    },
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (err) {
+    throw new ApiError(400, `Failed to send email: ${err.message}`);
+  }
+};
+
+export { sendOtpEmail, sendAccountCreationEmail, sendForgotPasswordLink };

@@ -9,6 +9,7 @@ import otpGenerate from "otp-generator";
 import {
   sendOtpEmail,
   sendAccountCreationEmail,
+  sendForgotPasswordLink,
 } from "../utils/emailService.js";
 
 const otpStore = new Map();
@@ -122,6 +123,102 @@ const verifyOtp = asyncHandler(async (req, res) => {
   return res
     .status(201)
     .json(new ApiResponse(200, createdUser, "User registered successfully"));
+});
+
+const resendOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email?.trim()) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  // Check if the user exists
+  const existingUser = await User.findOne({ email });
+  if (!existingUser) {
+    throw new ApiError(404, "User with this email does not exist");
+  }
+
+  // Check if an OTP already exists and is still valid
+  const storedOtpData = otpStore.get(email);
+  if (storedOtpData && Date.now() < storedOtpData.expiresAt) {
+    throw new ApiError(
+      429,
+      "OTP already sent. Please wait before requesting a new one."
+    );
+  }
+
+  // Generate a new OTP
+  const otp = otpGenerate.generate(4, {
+    upperCaseAlphabets: false,
+    lowerCaseAlphabets: false,
+    specialChars: false,
+  });
+
+  // Store new OTP with a fresh expiration time (5 minutes)
+  otpStore.set(email, { otp, expiresAt: Date.now() + 5 * 60 * 1000 });
+
+  // Send the new OTP via email
+  await sendOtpEmail(email, otp);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { otp }, "New OTP sent successfully"));
+});
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email?.trim()) {
+    throw new ApiError(400, "Email is required");
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) throw new ApiError(400, "User not found");
+
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    await sendForgotPasswordLink(email, resetLink);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Password reset link sent to your email"));
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, error.message));
+  }
+});
+
+const resetpassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const user = await User.findOne({ _id: decoded.id });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Invalid or expired token"));
+    }
+
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Password reset successful"));
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(new ApiError(500, error.message));
+  }
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -491,4 +588,7 @@ export {
   genrateUserChannelProfile,
   getWatchHistory,
   verifyOtp,
+  forgotPassword,
+  resetpassword,
+  resendOtp,
 };
