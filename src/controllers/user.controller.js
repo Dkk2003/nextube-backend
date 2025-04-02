@@ -132,12 +132,6 @@ const resendOtp = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email is required");
   }
 
-  // Check if the user exists
-  const existingUser = await User.findOne({ email });
-  if (!existingUser) {
-    throw new ApiError(404, "User with this email does not exist");
-  }
-
   // Check if an OTP already exists and is still valid
   const storedOtpData = otpStore.get(email);
   if (storedOtpData && Date.now() < storedOtpData.expiresAt) {
