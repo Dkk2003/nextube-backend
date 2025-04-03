@@ -33,15 +33,28 @@ const generateAccessAndRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { email, username } = req.body;
 
   if (!email?.trim()) {
     throw new ApiError(400, "Email is required");
   }
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new ApiError(409, "User with this email already exists");
+  const existedUser = await User.findOne({ $or: [{ email }, { username }] });
+
+  if (existedUser) {
+    let conflictField = "";
+
+    if (existedUser.email === email) {
+      conflictField = "email";
+    }
+    if (existedUser.username === username) {
+      conflictField = conflictField ? "both email and username" : "username";
+    }
+
+    return res.status(409).json({
+      message: `User with ${conflictField} already exists`,
+      conflictField,
+    });
   }
 
   const otp = otpGenerate.generate(4, {
@@ -61,6 +74,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const verifyOtp = asyncHandler(async (req, res) => {
   const { otp, fullName, email, username, password } = req.body;
+
+  const existedUser = await User.findOne({ $or: [{ email }, { username }] });
+  if (existedUser) {
+    throw new ApiError(409, "User with email or username already exists");
+  }
 
   if (!email?.trim() || !otp?.trim()) {
     throw new ApiError(400, "Email and OTP are required");
