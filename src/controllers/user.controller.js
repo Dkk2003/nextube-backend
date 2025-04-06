@@ -11,6 +11,8 @@ import {
   sendAccountCreationEmail,
   sendForgotPasswordLink,
 } from "../utils/emailService.js";
+import axios from "axios";
+import { PROVIDER_ENUM } from "../constants.js";
 
 const otpStore = new Map();
 
@@ -126,6 +128,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
     email,
     password,
     username: username.toLowerCase(),
+    provider: PROVIDER_ENUM.email,
   });
 
   const createdUser = await User.findById(user._id).select(
@@ -228,7 +231,6 @@ const resetpassword = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, {}, "Password reset successful"));
   } catch (error) {
-    console.log(error);
     return res.status(500).json(new ApiError(500, error.message));
   }
 });
@@ -587,6 +589,87 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+const signWithGoogle = asyncHandler(async (req, res) => {
+  const idToken = req.body?.accessToken;
+
+  if (!idToken) {
+    throw new ApiError(400, "Access token is required");
+  }
+
+  const profile = await axios.get(`${process?.env?.GOOGLE_PROFILE_DATA_URL}`, {
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+
+  const data = profile?.data;
+
+  if (!data) {
+    throw new ApiError(400, "Wrong access token");
+  }
+
+  const user = await User.findOne({ email: data.email });
+
+  if (!user) {
+    const createdUser = await User.create({
+      fullName: data?.name,
+      avatar: data.picture,
+      email: data.email,
+      provider: PROVIDER_ENUM.google,
+    });
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      createdUser._id
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            user: createdUser,
+            accessToken,
+            refreshToken,
+          },
+          "User Logged In Successfully"
+        )
+      );
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user,
+          accessToken,
+          refreshToken,
+        },
+        "User Logged In Successfully"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -603,4 +686,5 @@ export {
   forgotPassword,
   resetpassword,
   resendOtp,
+  signWithGoogle,
 };
