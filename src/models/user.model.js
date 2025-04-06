@@ -1,12 +1,21 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { PROVIDER_ENUM } from "../constants.js";
 
 const userSchema = new Schema(
   {
+    provider: {
+      type: String,
+      enum: ["email", "google"],
+      default: PROVIDER_ENUM.email,
+      required: true,
+    },
     username: {
       type: String,
-      required: true,
+      required: function () {
+        return this.provider === PROVIDER_ENUM.email;
+      },
       unique: true,
       lowercase: true,
       trim: true,
@@ -40,7 +49,9 @@ const userSchema = new Schema(
     ],
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: function () {
+        return this.provider === PROVIDER_ENUM.email;
+      },
     },
     refreshToken: {
       type: String,
