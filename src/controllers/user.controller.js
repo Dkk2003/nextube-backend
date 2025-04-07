@@ -139,7 +139,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
-  await sendAccountCreationEmail(email, fullName);
+  await sendAccountCreationEmail(email);
 
   return res
     .status(201)
@@ -626,6 +626,8 @@ const signWithGoogle = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: true,
     };
+
+    await sendAccountCreationEmail(data?.email);
 
     return res
       .status(200)
