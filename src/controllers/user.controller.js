@@ -670,6 +670,34 @@ const signWithGoogle = asyncHandler(async (req, res) => {
     );
 });
 
+const completeProfile = asyncHandler(async (req, res) => {
+  const { username, password } = req.body;
+
+  const existedUser = await User.findOne({ username });
+
+  if (existedUser) {
+    throw new ApiError(409, "Username already taken");
+  }
+
+  const user = await User.findById(req.user?._id);
+
+  if (!user) {
+    throw new ApiError("User does not exist");
+  }
+
+  user.username = username;
+  user.password = password;
+  await user.save();
+
+  if (!user) {
+    throw new ApiError(400, "Username and Password not updated");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Username and Password Updated"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -687,4 +715,5 @@ export {
   resetpassword,
   resendOtp,
   signWithGoogle,
+  completeProfile,
 };
