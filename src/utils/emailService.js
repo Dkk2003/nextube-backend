@@ -52,7 +52,7 @@ const sendOtpEmail = async (email, otp) => {
   });
 };
 
-const sendAccountCreationEmail = async (email, fullName) => {
+const sendAccountCreationEmail = async (email) => {
   const mailOptions = {
     from: `"Nextube" <${process.env.EMAIL_USER}>`,
     to: email,
