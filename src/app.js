@@ -23,6 +23,7 @@ import likeRoute from "./routes/like.routes.js";
 import healthCheckRoute from "./routes/healthcheck.routes.js";
 import commentRoute from "./routes/comment.routes.js";
 import dashboardRoute from "./routes/dashboard.routes.js";
+import cloudinaryRoute from "./routes/cloudinary.routes.js";
 
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/videos", videoRoute);
@@ -33,5 +34,6 @@ app.use("/api/v1/like", likeRoute);
 app.use("/api/v1/healthCheck", healthCheckRoute);
 app.use("/api/v1/comment", commentRoute);
 app.use("/api/v1/dashboard", dashboardRoute);
+app.use("/api/v1/cloudinary", cloudinaryRoute);
 
 export default app;
