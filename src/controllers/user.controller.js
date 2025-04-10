@@ -391,6 +391,12 @@ const updateUserDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
+  const existedUsername = await User.findOne({ username });
+
+  if (existedUsername) {
+    throw new ApiError(409, "Username already exists");
+  }
+
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
