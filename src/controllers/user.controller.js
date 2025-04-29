@@ -387,24 +387,34 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const updateUserDetails = asyncHandler(async (req, res) => {
   const { fullName, username } = req.body;
 
-  if (!fullName || !username) {
-    throw new ApiError(400, "All fields are required");
+  // Prepare an object with only the fields that are passed
+  const updateData = {};
+
+  if (username) {
+    const existedUsername = await User.findOne({
+      username,
+      _id: { $ne: req.user?._id }, // prevent collision with own username
+    });
+
+    if (existedUsername) {
+      throw new ApiError(409, "Username already exists");
+    }
+
+    updateData.username = username;
   }
 
-  const existedUsername = await User.findOne({ username });
+  if (fullName) {
+    updateData.fullName = fullName;
+  }
 
-  if (existedUsername) {
-    throw new ApiError(409, "Username already exists");
+  // If nothing to update
+  if (Object.keys(updateData).length === 0) {
+    throw new ApiError(400, "Nothing to update");
   }
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
-    {
-      $set: {
-        fullName,
-        username,
-      },
-    },
+    { $set: updateData },
     { new: true }
   ).select("-password");
 
