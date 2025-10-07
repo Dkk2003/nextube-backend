@@ -10,6 +10,7 @@ import {
   userAvatarUpdate,
   userCoverImageUpdate,
   genrateUserChannelProfile,
+  genrateUserChannelProfileById,
   getWatchHistory,
   verifyOtp,
   forgotPassword,
@@ -53,6 +54,7 @@ router
   .route("/cover-image")
   .patch(verifyJwt, upload.single("coverImage"), userCoverImageUpdate);
 router.route("/channel/:username").get(verifyJwt, genrateUserChannelProfile);
+router.route("/channel-by-id/:id").get(verifyJwt, genrateUserChannelProfileById);
 router.route("/history").get(verifyJwt, getWatchHistory);
 
 export default router;
