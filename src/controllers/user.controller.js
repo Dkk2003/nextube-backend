@@ -494,7 +494,7 @@ const genrateUserChannelProfile = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "subscription",
+        from: "subscriptions",
         localField: "_id",
         foreignField: "channel",
         as: "subscribers",
@@ -502,7 +502,7 @@ const genrateUserChannelProfile = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "subscription",
+        from: "subscriptions",
         localField: "_id",
         foreignField: "subscriber",
         as: "subscribedTo",
@@ -510,17 +510,11 @@ const genrateUserChannelProfile = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        subscribersCount: {
-          $size: "$subscribers",
-        },
-        channelSubscribedToCount: {
-          $size: "$subscribedTo",
-        },
+        subscribersCount: { $size: "$subscribers" },
+        channelSubscribedToCount: { $size: "$subscribedTo" },
         isSubscribed: {
           $cond: {
-            if: {
-              $in: [req.user?._id, "$subscribers.subscriber"],
-            },
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
             then: true,
             else: false,
           },
@@ -560,14 +554,14 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "video",
+        from: "videos",
         localField: "watchHistory",
         foreignField: "_id",
         as: "watchHistory",
         pipeline: [
           {
             $lookup: {
-              from: "user",
+              from: "users",
               localField: "owner",
               foreignField: "_id",
               as: "owner",
@@ -584,9 +578,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
           },
           {
             $addFields: {
-              owner: {
-                $first: "$owner",
-              },
+              owner: { $first: "$owner" },
             },
           },
         ],
@@ -599,7 +591,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        user[0].watchHistory,
+        user[0]?.watchHistory || [],
         "Watch history fetched successfully"
       )
     );
@@ -716,6 +708,67 @@ const completeProfile = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Username and Password Updated"));
 });
 
+const genrateUserChannelProfileById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) throw new ApiError(400, "User id is missing");
+
+  const channel = await User.aggregate([
+    {
+      $match: { _id: new mongoose.Types.ObjectId(id) },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: { $size: "$subscribers" },
+        channelSubscribedToCount: { $size: "$subscribedTo" },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscribersCount: 1,
+        channelSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+        createdAt: 1,
+      },
+    },
+  ]);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "channel does not exists");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, channel[0], "User channel successfully"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -727,6 +780,7 @@ export {
   userAvatarUpdate,
   userCoverImageUpdate,
   genrateUserChannelProfile,
+  genrateUserChannelProfileById,
   getWatchHistory,
   verifyOtp,
   forgotPassword,

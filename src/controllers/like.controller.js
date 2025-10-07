@@ -90,7 +90,10 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-  const likes = await Like.find({ likedBy: req.user?._id }).populate("video");
+  const likes = await Like.find({ likedBy: req.user?._id }).populate({
+    path: "video",
+    populate: { path: "owner", select: "fullName username avatar" },
+  });
 
   const likedVideos = likes
     .filter((like) => like.video)
